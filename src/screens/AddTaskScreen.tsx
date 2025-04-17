@@ -14,13 +14,14 @@ import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { db, auth } from "../../firebaseConfig";
 import { useNavigation } from "@react-navigation/native";
 import HeaderRightLogoutButton from "../components/HeaderRightLogoutButton";
+import { Picker } from "@react-native-picker/picker";
 
 const isWeb = Platform.OS === "web";
 
 export default function AddTaskScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("");
+  const [priority, setPriority] = useState("1");
   const [deadline, setDeadline] = useState(new Date());
   const [isPickerVisible, setPickerVisible] = useState(false);
 
@@ -34,8 +35,6 @@ export default function AddTaskScreen() {
 
   const handleAddTask = async () => {
     if (!description.trim()) return Alert.alert("Description is required");
-    if (!priority.trim() || isNaN(Number(priority)))
-      return Alert.alert("Priority must be a number");
 
     try {
       await addDoc(collection(db, "tasks"), {
@@ -46,7 +45,7 @@ export default function AddTaskScreen() {
         deadLine: Timestamp.fromDate(deadline),
         actual_time: 0,
         publisher: auth.currentUser?.uid,
-        userID: auth.currentUser?.uid,
+        responsible: null,
       });
 
       Alert.alert("Success", "Task added!");
@@ -84,30 +83,34 @@ export default function AddTaskScreen() {
         onChangeText={setDescription}
       />
 
-      <Text style={styles.label}>
-        Priority (1 = High, 2 = Medium, 3 = Low):
-      </Text>
-      <TextInput
-        style={styles.input}
-        placeholder="1, 2 or 3"
-        value={priority}
-        onChangeText={setPriority}
-        keyboardType="numeric"
-      />
+      <Text style={styles.label}>Priority:</Text>
+      <View>
+        <Picker
+          selectedValue={priority}
+          onValueChange={(itemValue) => setPriority(itemValue)}
+          style={styles.picker}
+        >
+          <Picker.Item label="Low (3)" value="3" />
+          <Picker.Item label="Medium (2)" value="2" />
+          <Picker.Item label="High (1)" value="1" />
+        </Picker>
+      </View>
 
       {isWeb ? (
-        <input
-          type="datetime-local"
-          onChange={handleWebDateChange}
-          style={{
-            padding: 10,
-            borderWidth: 1,
-            borderColor: "#ccc",
-            borderRadius: 5,
-            marginBottom: 15,
-            width: "100%",
-          }}
-        />
+        <>
+          <Text style={styles.label}>Deadline:</Text>
+          <input
+            type="datetime-local"
+            onChange={handleWebDateChange}
+            style={{
+              padding: 10,
+              borderWidth: 1,
+              borderColor: "#ccc",
+              borderRadius: 5,
+              marginBottom: 15,
+            }}
+          />
+        </>
       ) : (
         <>
           <Text style={styles.label}>Deadline:</Text>
@@ -162,5 +165,17 @@ const styles = StyleSheet.create({
   dateButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    marginBottom: 15,
+    paddingTop: 5,
+    paddingBottom: 5,
+  },
+  picker: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
 });
