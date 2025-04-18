@@ -3,7 +3,6 @@ import {
   View,
   TextInput,
   Button,
-  Alert,
   Text,
   StyleSheet,
   TouchableOpacity,
@@ -30,6 +29,17 @@ import * as Google from "expo-auth-session/providers/google";
 
 WebBrowser.maybeCompleteAuthSession();
 
+// 🔔 Cross-platform alert function
+const showAlert = (title: string, message: string) => {
+  if (Platform.OS === "web") {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    // Using Alert dynamically to avoid import error on web
+    const { Alert } = require("react-native");
+    Alert.alert(title, message);
+  }
+};
+
 export default function RegisterScreen() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -50,7 +60,6 @@ export default function RegisterScreen() {
       signInWithCredential(auth, credential)
         .then(async (userCredential) => {
           const user = userCredential.user;
-
           const usernameFromEmail = user.email?.split("@")[0] || "user";
 
           await setDoc(doc(db, "users", user.uid), {
@@ -61,12 +70,15 @@ export default function RegisterScreen() {
           });
 
           console.log("✅ Google sign-up success");
+          showAlert("Success", "Signed up with Google!");
         })
-        .catch((err) => Alert.alert("Google Sign-Up Failed", err.message));
+        .catch((err) =>
+          showAlert("Google Sign-Up Failed", err.message || "An error occurred.")
+        );
     }
   }, [response]);
 
-  // 🔍 Check if username already exists
+  // Check if username exists
   const isUsernameTaken = async (uname: string) => {
     const q = query(
       collection(db, "users"),
@@ -76,22 +88,19 @@ export default function RegisterScreen() {
     return !result.empty;
   };
 
-  // Email/Password Registration
+  // Register with Email/Password
   const register = async () => {
     if (!username || !email || !password || !confirmPassword) {
-      return Alert.alert("Error", "Please fill in all fields.");
+      return showAlert("Error", "Please fill in all fields.");
     }
 
     if (password !== confirmPassword) {
-      return Alert.alert("Error", "Passwords do not match.");
+      return showAlert("Error", "Passwords do not match.");
     }
 
     const taken = await isUsernameTaken(username);
     if (taken) {
-      return Alert.alert(
-        "Username Taken",
-        "Please choose a different username."
-      );
+      return showAlert("Username Taken", "Please choose a different username.");
     }
 
     try {
@@ -109,9 +118,9 @@ export default function RegisterScreen() {
         provider: "email",
       });
 
-      Alert.alert("Success", "Account created!");
+      showAlert("Success", "Account created!");
     } catch (error: any) {
-      Alert.alert("Registration Failed", error.message);
+      showAlert("Registration Failed", error.message || "An error occurred.");
     }
   };
 
