@@ -3,13 +3,16 @@ import {
   View,
   TextInput,
   Button,
-  Alert,
   Text,
   StyleSheet,
   TouchableOpacity,
   Platform,
 } from "react-native";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithCredential,
+} from "firebase/auth";
 import { auth } from "../../firebaseConfig";
 import { useNavigation } from "@react-navigation/native";
 import { NavigationType } from "../type";
@@ -18,20 +21,31 @@ import * as Google from "expo-auth-session/providers/google";
 
 WebBrowser.maybeCompleteAuthSession();
 
+// 🔔 Cross-platform alert function
+const showAlert = (title: string, message: string) => {
+  if (Platform.OS === "web") {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    const { Alert } = require("react-native");
+    Alert.alert(title, message);
+  }
+};
+
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigation = useNavigation<NavigationType>();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: "38989656430-2nfgk52v7c2hnacsq0ilja1h7oiqqn68.apps.googleusercontent.com",
+    clientId:
+      "38989656430-2nfgk52v7c2hnacsq0ilja1h7oiqqn68.apps.googleusercontent.com",
   });
 
   const login = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
-      Alert.alert("Login Failed", error.message);
+      showAlert("Login Failed", error.message || "Something went wrong.");
     }
   };
 
@@ -40,8 +54,13 @@ export default function LoginScreen() {
       const { idToken } = response.authentication!;
       const credential = GoogleAuthProvider.credential(idToken);
       signInWithCredential(auth, credential)
-        .then(() => console.log("✅ Google login successful"))
-        .catch((err) => Alert.alert("Login Error", err.message));
+        .then(() => {
+          console.log("✅ Google login successful");
+          showAlert("Success", "Signed in with Google!");
+        })
+        .catch((err) =>
+          showAlert("Login Error", err.message || "Google login failed.")
+        );
     }
   }, [response]);
 
