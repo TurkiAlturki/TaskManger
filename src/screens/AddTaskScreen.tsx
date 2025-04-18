@@ -1,3 +1,4 @@
+// ... all imports remain unchanged
 import React, { useState, useLayoutEffect } from "react";
 import {
   View,
@@ -25,9 +26,9 @@ export default function AddTaskScreen() {
   const [priority, setPriority] = useState("1");
   const [deadline, setDeadline] = useState(new Date());
 
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false); // Android
-  const [showDatePickerIOS, setShowDatePickerIOS] = useState(false); // iOS
-  const [showTimePickerIOS, setShowTimePickerIOS] = useState(false); // iOS
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [showDatePickerIOS, setShowDatePickerIOS] = useState(false);
+  const [showTimePickerIOS, setShowTimePickerIOS] = useState(false);
 
   const [isPriorityModalVisible, setPriorityModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -66,13 +67,11 @@ export default function AddTaskScreen() {
     }
   };
 
-  // Android: Handle datetime confirm
   const handleConfirmAndroid = (selectedDate: Date) => {
     setDeadline(selectedDate);
     setDatePickerVisibility(false);
   };
 
-  // iOS: Handle date and time change
   const handleDateChangeIOS = (event: any, selectedDate?: Date) => {
     if (selectedDate) {
       setDeadline(
@@ -172,7 +171,24 @@ export default function AddTaskScreen() {
             <Text style={styles.deadlineText}>{deadline.toLocaleString()}</Text>
           </View>
 
-          {Platform.OS === "android" ? (
+          {Platform.OS === "web" ? (
+            <input
+              type="datetime-local"
+              value={new Date(deadline).toISOString().slice(0, 16)}
+              onChange={(e) => {
+                const newDate = new Date(e.target.value);
+                if (!isNaN(newDate.getTime())) setDeadline(newDate);
+              }}
+              style={{
+                padding: 10,
+                borderRadius: 5,
+                borderColor: "#ccc",
+                borderWidth: 1,
+                marginBottom: 10,
+                fontSize: 16,
+              }}
+            />
+          ) : Platform.OS === "android" ? (
             <>
               <TouchableOpacity
                 style={styles.dateButton}
