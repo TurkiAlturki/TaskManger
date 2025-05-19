@@ -82,7 +82,7 @@ export default function TaskListScreen() {
   const getPriorityEmoji = (priority: number) => {
     if (priority === 1) return "🔥";
     if (priority === 2) return "⚠️";
-    return "🟢";
+    if (priority === 3) return "🟢";
   };
 
   return (
