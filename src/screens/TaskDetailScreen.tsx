@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
@@ -29,6 +30,7 @@ import {
 import { db, auth } from "../../firebaseConfig";
 import HeaderRightLogoutButton from "../components/HeaderRightLogoutButton";
 import Markdown from "react-native-markdown-display";
+import Modal from "react-native-modal";
 
 type TaskDetailRouteProp = RouteProp<{ params: { taskId: string } }, "params">;
 
@@ -48,8 +50,8 @@ export default function TaskDetailScreen() {
   const [editingFields, setEditingFields] = useState({
     title: false,
     description: false,
-    priority: false,
   });
+  const [isPriorityModalVisible, setPriorityModalVisible] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ headerRight: () => <HeaderRightLogoutButton /> });
@@ -99,6 +101,16 @@ export default function TaskDetailScreen() {
 
   const updateField = async (field: string, value: string) => {
     if (!task) return;
+
+    if (field === "title" && !value.trim()) {
+      Alert.alert("Validation Error", "Title is required.");
+      return;
+    }
+    if (field === "description" && !value.trim()) {
+      Alert.alert("Validation Error", "Description is required.");
+      return;
+    }
+
     await updateDoc(doc(db, "tasks", task.id), { [field]: value });
     fetchTask();
   };
@@ -217,7 +229,46 @@ export default function TaskDetailScreen() {
           <View style={styles.taskInfo}>
             {renderEditableField("title", "Title", task.title)}
             {renderEditableField("description", "Description", task.description, true)}
-            {renderEditableField("priority", "Priority", task.priority)}
+
+            <Text style={styles.detail}>Priority:</Text>
+            <TouchableOpacity
+              style={styles.priorityButton}
+              onPress={() => setPriorityModalVisible(true)}
+            >
+              <Text style={styles.priorityButtonText}>
+                {task.priority === "1"
+                  ? "🔥 High (1)"
+                  : task.priority === "2"
+                  ? "⚠️ Medium (2)"
+                  : "🟢 Low (3)"}
+              </Text>
+            </TouchableOpacity>
+
+            <Modal
+              isVisible={isPriorityModalVisible}
+              onBackdropPress={() => setPriorityModalVisible(false)}
+              backdropOpacity={0.3}
+            >
+              <View style={styles.modalContent}>
+                {[
+                  { label: "🔥 High (1)", value: "1" },
+                  { label: "⚠️ Medium (2)", value: "2" },
+                  { label: "🟢 Low (3)", value: "3" },
+                ].map((item) => (
+                  <TouchableOpacity
+                    key={item.value}
+                    style={styles.modalItem}
+                    onPress={async () => {
+                      await updateField("priority", item.value);
+                      setTask((prev: any) => ({ ...prev, priority: item.value }));
+                      setPriorityModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.modalItemText}>{item.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Modal>
 
             <Text style={styles.detail}>
               Publisher: {users[task.publisher] || task.publisher}
@@ -400,5 +451,33 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 16,
+  },
+  priorityButton: {
+    borderWidth: 1,
+    borderColor: "#888",
+    borderRadius: 5,
+    padding: 12,
+    marginBottom: 15,
+    backgroundColor: "#f9f9f9",
+  },
+  priorityButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 8,
+  },
+  modalItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: "#007AFF",
+    textAlign: "center",
   },
 });
