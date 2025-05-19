@@ -70,10 +70,10 @@ export default function TaskListScreen() {
       );
     })
     .sort((a, b) => {
-      const dateA = new Date(a.deadLine?.toDate?.() || a.deadLine || 0).getTime();
-      const dateB = new Date(b.deadLine?.toDate?.() || b.deadLine || 0).getTime();
+      const dateA = new Date(a.deadline?.toDate?.() || a.deadline || 0).getTime();
+      const dateB = new Date(b.deadline?.toDate?.() || b.deadline || 0).getTime();
       if (sortMode === "priority") {
-        const priorityDiff = (a.priorities ?? 3) - (b.priorities ?? 3);
+        const priorityDiff = (a.priority ?? 3) - (b.priority ?? 3);
         if (priorityDiff !== 0) return priorityDiff;
       }
       return dateA - dateB;
@@ -128,7 +128,7 @@ export default function TaskListScreen() {
 
         {/* Task List */}
         {filteredTasks.map((item) => {
-          const deadline = item.deadLine?.toDate?.() || new Date(item.deadLine);
+          const deadline = item.deadline?.toDate?.() || new Date(item.deadline);
           return (
             <Pressable
               key={item.id}
@@ -139,7 +139,7 @@ export default function TaskListScreen() {
               <Text style={styles.taskDetail}>Publisher: {users[item.publisher] || "Unknown"}</Text>
               <Text style={styles.taskDetail}>Responsible: {users[item.responsible] || "Unassigned"}</Text>
               <Text style={styles.taskDetail}>
-                Priority: {item.priorities} {getPriorityEmoji(item.priorities)}
+                Priority: {item.priority} {getPriorityEmoji(item.priority)}
               </Text>
               <Text style={styles.taskDetail}>Deadline: {deadline.toLocaleString()}</Text>
             </Pressable>
@@ -188,7 +188,7 @@ export default function TaskListScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    paddingBottom: 100, // extra space for bottom button
+    paddingBottom: 100,
     backgroundColor: "#fff",
   },
   tabContainer: {

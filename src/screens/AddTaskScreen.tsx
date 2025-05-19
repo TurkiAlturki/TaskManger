@@ -1,4 +1,3 @@
-// ... all imports remain unchanged
 import React, { useState, useLayoutEffect } from "react";
 import {
   View,
@@ -12,7 +11,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
 } from "react-native";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Modal from "react-native-modal";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
@@ -26,10 +24,8 @@ export default function AddTaskScreen() {
   const [priority, setPriority] = useState("1");
   const [deadline, setDeadline] = useState(new Date());
 
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [showDatePickerIOS, setShowDatePickerIOS] = useState(false);
-  const [showTimePickerIOS, setShowTimePickerIOS] = useState(false);
-
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [isPriorityModalVisible, setPriorityModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -67,41 +63,41 @@ export default function AddTaskScreen() {
     }
   };
 
-  const handleConfirmAndroid = (selectedDate: Date) => {
-    setDeadline(selectedDate);
-    setDatePickerVisibility(false);
-  };
-
-  const handleDateChangeIOS = (event: any, selectedDate?: Date) => {
+  const handleDateChange = (event: any, selectedDate?: Date) => {
     if (selectedDate) {
-      setDeadline(
-        (prev) =>
-          new Date(
-            selectedDate.getFullYear(),
-            selectedDate.getMonth(),
-            selectedDate.getDate(),
-            prev.getHours(),
-            prev.getMinutes()
-          )
-      );
+      setDeadline((prev) => new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+        prev.getHours(),
+        prev.getMinutes()
+      ));
     }
-    setShowDatePickerIOS(false);
+    setShowDatePicker(false);
   };
 
-  const handleTimeChangeIOS = (event: any, selectedTime?: Date) => {
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
     if (selectedTime) {
-      setDeadline(
-        (prev) =>
-          new Date(
-            prev.getFullYear(),
-            prev.getMonth(),
-            prev.getDate(),
-            selectedTime.getHours(),
-            selectedTime.getMinutes()
-          )
-      );
+      setDeadline((prev) => new Date(
+        prev.getFullYear(),
+        prev.getMonth(),
+        prev.getDate(),
+        selectedTime.getHours(),
+        selectedTime.getMinutes()
+      ));
     }
-    setShowTimePickerIOS(false);
+    setShowTimePicker(false);
+  };
+
+  // Format for <input type="datetime-local" /> in local time (not UTC)
+  const formatDateTimeLocal = (date: Date) => {
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const yyyy = date.getFullYear();
+    const MM = pad(date.getMonth() + 1);
+    const dd = pad(date.getDate());
+    const hh = pad(date.getHours());
+    const mm = pad(date.getMinutes());
+    return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
   };
 
   return (
@@ -167,74 +163,59 @@ export default function AddTaskScreen() {
           </Modal>
 
           <Text style={styles.label}>Deadline:</Text>
-          <View style={styles.deadlineBox}>
-            <Text style={styles.deadlineText}>{deadline.toLocaleString()}</Text>
-          </View>
 
           {Platform.OS === "web" ? (
-            <input
-              type="datetime-local"
-              value={new Date(deadline).toISOString().slice(0, 16)}
-              onChange={(e) => {
-                const newDate = new Date(e.target.value);
-                if (!isNaN(newDate.getTime())) setDeadline(newDate);
-              }}
-              style={{
-                padding: 10,
-                borderRadius: 5,
-                borderColor: "#ccc",
-                borderWidth: 1,
-                marginBottom: 10,
-                fontSize: 16,
-              }}
-            />
-          ) : Platform.OS === "android" ? (
             <>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setDatePickerVisibility(true)}
-              >
-                <Text style={styles.dateButtonText}>📅 Pick Deadline</Text>
-              </TouchableOpacity>
-              <DateTimePickerModal
-                isVisible={isDatePickerVisible}
-                mode="datetime"
-                date={deadline}
-                onConfirm={handleConfirmAndroid}
-                onCancel={() => setDatePickerVisibility(false)}
+              <input
+                type="datetime-local"
+                value={formatDateTimeLocal(deadline)}
+                onChange={(e) => {
+                  const newDate = new Date(e.target.value);
+                  if (!isNaN(newDate.getTime())) setDeadline(newDate);
+                }}
+                style={{
+                  padding: 10,
+                  borderRadius: 5,
+                  borderColor: "#ccc",
+                  borderWidth: 1,
+                  marginBottom: 5,
+                  fontSize: 16,
+                  width: "100%",
+                }}
               />
+              <Text style={{ marginBottom: 15, color: "#555" }}>
+                Selected: {deadline.toLocaleString()}
+              </Text>
             </>
           ) : (
             <>
               <TouchableOpacity
                 style={styles.dateButton}
-                onPress={() => setShowDatePickerIOS(true)}
+                onPress={() => setShowDatePicker(true)}
               >
                 <Text style={styles.dateButtonText}>📅 Pick Date</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={styles.dateButton}
-                onPress={() => setShowTimePickerIOS(true)}
+                onPress={() => setShowTimePicker(true)}
               >
                 <Text style={styles.dateButtonText}>⏰ Pick Time</Text>
               </TouchableOpacity>
 
-              {showDatePickerIOS && (
+              {showDatePicker && (
                 <DateTimePicker
                   value={deadline}
                   mode="date"
                   display="default"
-                  onChange={handleDateChangeIOS}
+                  onChange={handleDateChange}
                 />
               )}
-
-              {showTimePickerIOS && (
+              {showTimePicker && (
                 <DateTimePicker
                   value={deadline}
                   mode="time"
                   display="default"
-                  onChange={handleTimeChangeIOS}
+                  onChange={handleTimeChange}
                 />
               )}
             </>
@@ -288,13 +269,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateButtonText: { color: "#fff", fontWeight: "bold" },
-  deadlineBox: {
-    padding: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 5,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-  },
-  deadlineText: { color: "#000", fontSize: 16, fontWeight: "500" },
 });

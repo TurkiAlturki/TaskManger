@@ -1,4 +1,3 @@
-// ... all imports remain unchanged
 import React, { useEffect, useState, useLayoutEffect } from "react";
 import {
   View,
@@ -11,7 +10,6 @@ import {
   Platform,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
@@ -50,7 +48,7 @@ export default function TaskDetailScreen() {
   const [editingFields, setEditingFields] = useState({
     title: false,
     description: false,
-    priorities: false,
+    priority: false,
   });
 
   useLayoutEffect(() => {
@@ -63,9 +61,7 @@ export default function TaskDetailScreen() {
     const unsub = onSnapshot(
       query(collection(db, `tasks/${taskId}/comments`), orderBy("date", "asc")),
       (snapshot) => {
-        setComments(
-          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-        );
+        setComments(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       }
     );
     return () => unsub();
@@ -126,24 +122,6 @@ export default function TaskDetailScreen() {
   const markAsDone = async () => {
     await updateDoc(doc(db, "tasks", taskId), { status: "done" });
     fetchTask();
-  };
-
-  const removeTask = async () => {
-    Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteDoc(doc(db, "tasks", taskId));
-            navigation.goBack();
-          } catch (error: any) {
-            Alert.alert("Error", error.message);
-          }
-        },
-      },
-    ]);
   };
 
   const handleFieldEdit = (field: keyof typeof editingFields) => {
@@ -234,21 +212,12 @@ export default function TaskDetailScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll}>
         {loadingTask ? (
-          <ActivityIndicator
-            size="large"
-            color="#007AFF"
-            style={{ marginTop: 40 }}
-          />
+          <ActivityIndicator size="large" color="#007AFF" style={{ marginTop: 40 }} />
         ) : task ? (
           <View style={styles.taskInfo}>
             {renderEditableField("title", "Title", task.title)}
-            {renderEditableField(
-              "description",
-              "Description",
-              task.description,
-              true
-            )}
-            {renderEditableField("priorities", "Priority", task.priorities)}
+            {renderEditableField("description", "Description", task.description, true)}
+            {renderEditableField("priority", "Priority", task.priority)}
 
             <Text style={styles.detail}>
               Publisher: {users[task.publisher] || task.publisher}
@@ -256,9 +225,9 @@ export default function TaskDetailScreen() {
             <Text style={styles.detail}>
               Responsible: {users[task.responsible] || "Unassigned"}
             </Text>
-            {task.deadLine?.toDate && (
+            {task.deadline?.toDate && (
               <Text style={styles.detail}>
-                Deadline: {task.deadLine.toDate().toLocaleString()}
+                Deadline: {task.deadline.toDate().toLocaleString()}
               </Text>
             )}
             <Text style={styles.detail}>Status: {task.status}</Text>
@@ -277,17 +246,8 @@ export default function TaskDetailScreen() {
               ))}
             </Picker>
 
-            {task.status === "inprogress" &&
-              task.responsible === currentUser?.uid && (
-                <Button
-                  title="Mark as Done ✅"
-                  color="green"
-                  onPress={markAsDone}
-                />
-              )}
-
-            {task.publisher === currentUser?.uid && (
-              <Button title="🗑 Remove Task" color="red" onPress={removeTask} />
+            {task.status === "inprogress" && task.responsible === currentUser?.uid && (
+              <Button title="Mark as Done ✅" color="green" onPress={markAsDone} />
             )}
           </View>
         ) : (
@@ -296,7 +256,6 @@ export default function TaskDetailScreen() {
           </Text>
         )}
 
-        {/* COMMENTS */}
         <Text style={styles.sectionHeader}>Comments</Text>
         <FlatList
           data={comments}
@@ -308,9 +267,7 @@ export default function TaskDetailScreen() {
             return (
               <View style={styles.commentItem}>
                 <View style={styles.commentHeader}>
-                  <Text style={styles.commentAuthor}>
-                    {item.commenter_name}
-                  </Text>
+                  <Text style={styles.commentAuthor}>{item.commenter_name}</Text>
                   {isOwner && (
                     <TouchableOpacity onPress={() => deleteComment(item.id)}>
                       <Text style={styles.deleteText}>🗑</Text>
@@ -327,16 +284,13 @@ export default function TaskDetailScreen() {
                   />
                 ) : (
                   <TouchableOpacity
-                    onLongPress={() =>
-                      isOwner && startEditing(item.id, item.description)
-                    }
+                    onLongPress={() => isOwner && startEditing(item.id, item.description)}
                   >
                     <Markdown>{item.description}</Markdown>
                   </TouchableOpacity>
                 )}
                 <Text style={styles.commentDate}>
-                  {item.date?.toDate &&
-                    new Date(item.date.toDate()).toLocaleString()}
+                  {item.date?.toDate && new Date(item.date.toDate()).toLocaleString()}
                 </Text>
                 <View style={styles.reactionRow}>
                   {["👍", "❤️", "😂"].map((emoji) => {
@@ -412,8 +366,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginLeft: 10,
   },
-  title: { fontSize: 20, fontWeight: "bold" },
-  desc: { fontSize: 16, marginVertical: 8, color: "#333" },
   detail: { fontSize: 15, color: "#555", marginVertical: 2 },
   sectionHeader: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
   commentItem: {
